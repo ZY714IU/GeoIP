@@ -22,6 +22,27 @@
       "action": "add",
       "args": {
         "name": "cn",
+        "mark": "苍狼山庄v4",
+        "uri": "https://ispip.clang.cn/all_cn.txt",
+        "onlyIPType": "ipv4"
+      }
+    },
+    {
+      "type": "text",
+      "action": "add",
+      "args": {
+        "name": "cn",
+        "mark": "纯真IP",
+        "uri": "https://raw.githubusercontent.com/metowolf/iplist/master/data/special/china.txt",
+        "onlyIPType": "ipv4"
+      }
+    },
+    {
+      "type": "text",
+      "action": "add",
+      "args": {
+        "name": "cn",
+        "mark": "IPIP.NET",
         "uri": "https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt",
         "onlyIPType": "ipv4"
       }
@@ -31,6 +52,17 @@
       "action": "add",
       "args": {
         "name": "cn",
+        "mark": "misakaio",
+        "uri": "https://raw.githubusercontent.com/misakaio/chnroutes2/refs/heads/master/chnroutes.txt",
+        "onlyIPType": "ipv4"
+      }
+    },
+    {
+      "type": "text",
+      "action": "add",
+      "args": {
+        "name": "cn",
+        "mark": "USTC高一凡v4",
         "uri": "https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china.txt",
         "onlyIPType": "ipv4"
       }
@@ -40,6 +72,17 @@
       "action": "add",
       "args": {
         "name": "cn",
+        "mark": "苍狼山庄v6",
+        "uri": "https://ispip.clang.cn/all_cn_ipv6.txt",
+        "onlyIPType": "ipv6"
+      }
+    },
+    {
+      "type": "text",
+      "action": "add",
+      "args": {
+        "name": "cn",
+        "mark": "USTC高一凡v6",
         "uri": "https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china6.txt",
         "onlyIPType": "ipv6"
       }
