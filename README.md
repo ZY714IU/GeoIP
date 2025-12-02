@@ -1,8 +1,9 @@
 ### 📥 下载链接
 | 项目 | 文件 | GitHub RAW | CDN 加速
 | :--:  | :--:  | :--: | :--:
-| GeoIP | Country-only-cn-private.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/geoip/release/Country-only-cn-private.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/geoip@release/Country-only-cn-private.mmdb)
+| GeoIP | Country-cn.mmdb | [下载](https://github.com/ZY714IU/GeoIP/raw/release/Country-cn.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-asn.mmdb)
 | ASN | Country-asn.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/geoip/release/Country-asn.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/geoip@release/Country-asn.mmdb)
+
 
 # 简介
 
@@ -205,12 +206,12 @@ MaxMind 官方版 **ASN** 类型 mmdb 文件：
 - **Country.mmdb.sha256sum**：
   - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country.mmdb.sha256sum](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country.mmdb.sha256sum)
   - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country.mmdb.sha256sum](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country.mmdb.sha256sum)
-- **Country-only-cn-private.mmdb**（精简版 GeoIP，只包含 `GEOIP,CN` 和 `GEOIP,PRIVATE`）：
-  - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-only-cn-private.mmdb](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-only-cn-private.mmdb)
-  - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-only-cn-private.mmdb](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-only-cn-private.mmdb)
-- **Country-only-cn-private.mmdb.sha256sum**：
-  - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-only-cn-private.mmdb.sha256sum](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-only-cn-private.mmdb.sha256sum)
-  - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-only-cn-private.mmdb.sha256sum](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-only-cn-private.mmdb.sha256sum)
+- **Country-cn.mmdb**（精简版 GeoIP，只包含 `GEOIP,CN` 和 `GEOIP,PRIVATE`）：
+  - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-cn.mmdb](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-cn.mmdb)
+  - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn.mmdb](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn.mmdb)
+- **Country-cn.mmdb.sha256sum**：
+  - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-cn.mmdb.sha256sum](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-cn.mmdb.sha256sum)
+  - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn.mmdb.sha256sum](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn.mmdb.sha256sum)
 - **Country-asn.mmdb**（精简版 GeoIP，只包含上述新增类别）：
   - [https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-asn.mmdb](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-asn.mmdb)
   - [https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-asn.mmdb](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-asn.mmdb)
@@ -596,7 +597,7 @@ $ ./geoip convert -c config.json
 2021/08/29 12:11:35 ✅ [v2rayGeoIPDat] cn.dat --> output/dat
 2021/08/29 12:11:35 ✅ [v2rayGeoIPDat] private.dat --> output/dat
 2021/08/29 12:11:39 ✅ [maxmindMMDB] Country.mmdb --> output/maxmind
-2021/08/29 12:11:39 ✅ [maxmindMMDB] Country-only-cn-private.mmdb --> output/maxmind
+2021/08/29 12:11:39 ✅ [maxmindMMDB] Country-cn.mmdb --> output/maxmind
 2021/08/29 12:11:39 ✅ [text] netflix.txt --> output/text
 2021/08/29 12:11:39 ✅ [text] telegram.txt --> output/text
 2021/08/29 12:11:39 ✅ [text] cn.txt --> output/text
@@ -819,5 +820,6 @@ This product includes GeoLite2 data created by MaxMind, available from [MaxMind]
 ## 项目 Star 数增长趋势
 
 [![Stargazers over time](https://starchart.cc/ZY714IU/GeoIP.svg)](https://starchart.cc/ZY714IU/GeoIP)
+
 
 
