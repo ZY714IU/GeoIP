@@ -7,7 +7,7 @@
 # 简介
 
 项目为Loyalsoldier/geoip的修改版，和原项目有以下不同：
-中国大陆（CN）IPv4、IPv6地址替换为 苍狼山庄、纯真IP、IPIP.NET、gaoyifan 的数据源，来自@NobyDa/geoip
+中国大陆（CN）IPv4、IPv6地址替换为 苍狼山庄、纯真IP、IPIP.NET、gaoyifan 的数据源，来自NobyDa[https://github.com/NobyDa/geoip]
 
 本项目每周四自动生成多种格式 GeoIP 文件，同时提供命令行界面（CLI）工具供用户自行定制 GeoIP 文件，包括但不限于 V2Ray `dat` 格式文件 `geoip.dat`、MaxMind `mmdb` 格式文件 `Country.mmdb`、sing-box `SRS` 格式文件、mihomo `MRS` 格式文件、Clash ruleset 和 Surge ruleset。
 
