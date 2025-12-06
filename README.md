@@ -8,7 +8,7 @@
 
 项目为[Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip)的修改版，和原项目有以下不同：
 
-- 中国大陆（CN）IPv4、IPv6地址替换为 [苍狼山庄](https://ispip.clang.cn/)、[纯真IP](https://github.com/metowolf/iplist)、[IPIP.NET](https://github.com/17mon/china_ip_list)、[gaoyifan](https://github.com/gaoyifan/china-operator-ip) 的数据源 来自[NobyDa](https://github.com/NobyDa/geoip)
+- 中国大陆（CN）IPv4、IPv6地址替换为 [苍狼山庄](https://ispip.clang.cn/)、[纯真IP](https://github.com/metowolf/iplist)、[IPIP.NET](https://github.com/17mon/china_ip_list)、[gaoyifan](https://github.com/gaoyifan/china-operator-ip) 的数据源 --- 来自[NobyDa](https://github.com/NobyDa/geoip)
 
 
 ## License
