@@ -6,7 +6,7 @@
 
 # 简介
 
-项目为Loyalsoldier/geoip的修改版，和原项目有以下不同：
+项目为https://github.com/Loyalsoldier/geoip的修改版，和原项目有以下不同：
 中国大陆（CN）IPv4、IPv6地址替换为 苍狼山庄、纯真IP、IPIP.NET、gaoyifan 的数据源，来自https://github.com/NobyDa/geoip
 
 
