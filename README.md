@@ -1,9 +1,8 @@
 ### 📥 下载链接
 | 项目 | 文件 | GitHub RAW | CDN 加速
 | :--:  | :--:  | :--: | :--:
-| GeoIP | Country-cn.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country-cn.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn.mmdb)
 | GeoIP | Country.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/Country.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country.mmdb)
-| ASN | Country-asn.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/geoip/release/Country-asn.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/geoip@release/Country-asn.mmdb)
+| ASN | GeoLite2-ASN.mmdb | [下载](https://raw.githubusercontent.com/ZY714IU/GeoIP/release/GeoLite2-ASN.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/GeoLite2-ASN.mmdb)
 
 # 简介
 
