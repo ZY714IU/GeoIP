@@ -73,6 +73,161 @@ func newMRSIn(action lib.Action, data json.RawMessage) (lib.InputConverter, erro
 		URI:         tmp.URI,
 		InputDir:    tmp.InputDir,
 		Want:        wantList,
+		OnlyIPType:  tmp.OnlyIPType,
+	}, nil
+}
+
+type MRSIn struct {
+	Type        string
+	Action      lib.Action
+	Description string
+	Name        string
+	URI         string
+	InputDir    string
+	Want        map[string]bool
+	OnlyIPType  lib.IPType
+}
+
+func (m *MRSIn) GetType() string {
+	return m.Type
+}
+
+func (m *MRSIn) GetAction() lib.Action {
+	return m.Action
+}
+
+func (m *MRSIn) GetDescription() string {
+	return m.Description
+}
+
+func (m *MRSIn) Input(container lib.Container) (lib.Container, error) {
+	entries := make(map[string]*lib.Entry)
+	var err error
+
+	switch {
+	case m.InputDir != "":
+		err = m.walkDir(m.InputDir, entries)
+	case m.Name != "" && m.URI != "":
+		switch {
+		case strings.HasPrefix(strings.ToLower(m.URI), "http://"), strings.HasPrefix(strings.ToLower(m.URI), "https://"):
+			err = m.walkRemoteFile(m.URI, m.Name, entries)
+		default:
+			err = m.walkLocalFile(m.URI, m.Name, entries)
+		}
+	default:
+		return nil, fmt.Errorf("❌ [type %s | action %s] config missing argument inputDir or name or uri", m.Type, m.Action)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(entries) == 0 {
+		return nil, fmt.Errorf("❌ [type %s | action %s] no entry is generated", m.Type, m.Action)
+	}
+
+	ignoreIPType := lib.GetIgnoreIPType(m.OnlyIPType)
+
+	for _, entry := range entries {
+		switch m.Action {
+		case lib.ActionAdd:
+			if err := container.Add(entry, ignoreIPType); err != nil {
+				return nil, err
+			}
+		case lib.ActionRemove:
+			if err := container.Remove(entry, lib.CaseRemovePrefix, ignoreIPType); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, lib.ErrUnknownAction
+		}
+	}
+
+	return container, nil
+}
+
+func (m *MRSIn) walkDir(dir string, entries map[string]*lib.Entry) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		if err := m.walkLocalFile(path, "", entries); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (m *MRSIn) walkLocalFile(path, name string, entries map[string]*lib.Entry) error {
+	entryName := ""
+	name = strings.TrimSpace(name)
+	if name != "" {
+		entryName = name
+	} else {
+		entryName = filepath.Base(path)
+
+		// check filename
+		if !regexp.MustCompile(`^[a-zA-Z0-9_.\-]+$`).MatchString(entryName) {
+			return fmt.Errorf("❌ [type %s | action %s] filename %s cannot be entry name, please remove special characters in it", m.Type, m.Action, entryName)
+		}
+
+		// remove file extension but not hidden files of which filename starts with "."
+		dotIndex := strings.LastIndex(entryName, ".")
+		if dotIndex > 0 {
+			entryName = entryName[:dotIndex]
+		}
+	}
+
+	entryName = strings.ToUpper(entryName)
+	if _, found := entries[entryName]; found {
+		return fmt.Errorf("❌ [type %s | action %s] found duplicated list %s", m.Type, m.Action, entryName)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := m.generateEntries(entryName, file, entries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *MRSIn) walkRemoteFile(url, name string, entries map[string]*lib.Entry) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("❌ [type %s | action %s] failed to get remote file %s, http status code %d", m.Type, m.Action, url, resp.StatusCode)
+	}
+
+	if err := m.generateEntries(name, resp.Body, entries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *MRSIn) generateEntries(name string, reader io.Reader, entries map[string]*lib.Entry) error {
+	name = strings.ToUpper(name)
+
+	if len(m.Want) > 0 && !m.Want[name] {
+		return nil
+	}
+
 	entry, found := entries[name]
 	if !found {
 		entry = lib.NewEntry(name)
