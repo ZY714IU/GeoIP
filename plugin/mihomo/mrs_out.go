@@ -132,51 +132,6 @@ func (m *MRSOut) filterAndSortList(container lib.Container) []string {
 	}
 
 	// Sort the list
-	slices.Sort(list)
-
-	return list
-}
-
-func (m *MRSOut) generate(entry *lib.Entry) error {
-	var ipRanges []netipx.IPRange
-	var err error
-	switch m.OnlyIPType {
-	case lib.IPv4:
-		ipRanges, err = entry.MarshalIPRange(lib.IgnoreIPv6)
-	case lib.IPv6:
-		ipRanges, err = entry.MarshalIPRange(lib.IgnoreIPv4)
-	default:
-		ipRanges, err = entry.MarshalIPRange()
-	}
-	if err != nil {
-		return err
-	}
-
-	if len(ipRanges) == 0 {
-		return fmt.Errorf("❌ [type %s | action %s] entry %s has no CIDR", m.Type, m.Action, entry.GetName())
-	}
-
-	filename := strings.ToLower(entry.GetName()) + ".mrs"
-	if err := m.writeFile(filename, ipRanges); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *MRSOut) writeFile(filename string, ipRanges []netipx.IPRange) error {
-	if err := os.MkdirAll(m.OutputDir, 0755); err != nil {
-		return err
-	}
-
-	f, err := os.Create(filepath.Join(m.OutputDir, filename))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	err = m.convertToMrs(ipRanges, f)
-	if err != nil {
 		return err
 	}
 
