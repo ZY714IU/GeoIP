@@ -182,16 +182,7 @@ func (g *GeoIPDatOut) filterAndSortList(container lib.Container) []string {
 }
 
 func (g *GeoIPDatOut) generateGeoIP(entry *lib.Entry) (*GeoIP, error) {
-	var entryCidr []netip.Prefix
-	var err error
-	switch g.OnlyIPType {
-	case lib.IPv4:
-		entryCidr, err = entry.MarshalPrefix(lib.IgnoreIPv6)
-	case lib.IPv6:
-		entryCidr, err = entry.MarshalPrefix(lib.IgnoreIPv4)
-	default:
-		entryCidr, err = entry.MarshalPrefix()
-	}
+	entryCidr, err := entry.MarshalPrefix(lib.GetIgnoreIPType(g.OnlyIPType))
 	if err != nil {
 		return nil, err
 	}
