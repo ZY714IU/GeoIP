@@ -1,4 +1,6 @@
 name: Build geoip files
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 on:
   workflow_dispatch:
   schedule:
@@ -117,20 +119,11 @@ jobs:
           rm -rf ./output/GeoLite2-*.sha256sum
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
-#     - name: Upload files to GitHub release
-#       uses: svenstaro/upload-release-action@v2
-#       with:
-#         repo_token: ${{ secrets.GITHUB_TOKEN }}
-#         file_glob: true
-#         file: ./output/*
-#         release_name: ${{ env.RELEASE_NAME }}
-#         tag: ${{ env.TAG_NAME }}
-
       - name: Upload files to GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: svenstaro/upload-release-action@v2
         with:
-          files: ./output/*
-          tag_name: ${{ env.TAG_NAME }}
-          name: ${{ env.RELEASE_NAME }}
-          env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ./output/*
+          release_name: ${{ env.RELEASE_NAME }}
+          tag: ${{ env.TAG_NAME }}
