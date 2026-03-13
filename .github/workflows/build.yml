@@ -117,11 +117,20 @@ jobs:
           rm -rf ./output/GeoLite2-*.sha256sum
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
+#     - name: Upload files to GitHub release
+#       uses: svenstaro/upload-release-action@v2
+#       with:
+#         repo_token: ${{ secrets.GITHUB_TOKEN }}
+#         file_glob: true
+#         file: ./output/*
+#         release_name: ${{ env.RELEASE_NAME }}
+#         tag: ${{ env.TAG_NAME }}
+
       - name: Upload files to GitHub release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file_glob: true
-          file: ./output/*
-          release_name: ${{ env.RELEASE_NAME }}
-          tag: ${{ env.TAG_NAME }}
+          files: ./output/*
+          tag_name: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
