@@ -380,7 +380,7 @@ func (g *GeoLite2CountryMMDBOut) writeFile(filename string, writer *mmdbwriter.T
 	if err != nil {
 		return err
 	}
- defer f.Close()
+    defer f.Close()
 
 	_, err = writer.WriteTo(f)
 	if err != nil {
