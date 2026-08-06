@@ -363,7 +363,7 @@
       "action": "output",
       "args": {
         "outputDir": "./output",
-        "outputName": "Country-only-cn-private.mmdb",
+        "outputName": "Country-cn-private.mmdb",
         "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
         "wantedList": ["cn", "private"]
       }
