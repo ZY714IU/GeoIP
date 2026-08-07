@@ -264,6 +264,17 @@
   ],
   "output": [
     {
+      "type": "maxmindMMDB",
+      "action": "output",
+      "args": {
+        "outputDir": "./output",
+        "outputName": "Country-cn-private.mmdb",
+        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "wantedList": ["cn", "private"]
+      }
+    },
+    /*
+    {
       "type": "v2rayGeoIPDat",
       "action": "output",
       "args": {
@@ -363,16 +374,6 @@
       "action": "output",
       "args": {
         "outputDir": "./output",
-        "outputName": "Country-cn-private.mmdb",
-        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
-        "wantedList": ["cn", "private"]
-      }
-    },
-    {
-      "type": "maxmindMMDB",
-      "action": "output",
-      "args": {
-        "outputDir": "./output",
         "outputName": "Country-asn.mmdb",
         "wantedList": [
           "cloudflare",
@@ -431,5 +432,6 @@
       "type": "surgeRuleSet",
       "action": "output"
     }
+    */
   ]
 }
