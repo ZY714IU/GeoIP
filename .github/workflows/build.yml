@@ -55,22 +55,22 @@ jobs:
 
           curl -L \
             -H "Authorization: Bearer ${TOKEN}" \
-            "https://github.com/ZY714IU/7/raw/main/Maxmind/GeoLite2-ASN.tar.gz" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN.tar.gz" \
             -o ./output/GeoLite2-ASN.tar.gz
 
           curl -L \
             -H "Authorization: Bearer ${TOKEN}" \
-            "https://github.com/ZY714IU/7/raw/main/Maxmind/GeoLite2-ASN-CSV.zip" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN-CSV.zip" \
             -o ./output/GeoLite2-ASN-CSV.zip
 
           curl -L \
             -H "Authorization: Bearer ${TOKEN}" \
-            "https://github.com/ZY714IU/7/raw/main/Maxmind/GeoLite2-Country.tar.gz" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country.tar.gz" \
             -o ./output/GeoLite2-Country.tar.gz
 
           curl -L \
             -H "Authorization: Bearer ${TOKEN}" \
-            "https://github.com/ZY714IU/7/raw/main/Maxmind/GeoLite2-Country-CSV.zip" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country-CSV.zip" \
             -o ./output/GeoLite2-Country-CSV.zip
 
       - name: Prepare GeoLite2 databases
