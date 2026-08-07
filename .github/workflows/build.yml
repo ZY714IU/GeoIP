@@ -49,7 +49,7 @@ jobs:
 
       - name: Download GeoLite2 databases
         env:
-          TOKEN: ${{ secrets.Token }}
+          TOKEN: ${{ secrets.TOKEN }}
         run: |
           mkdir -p output
 
