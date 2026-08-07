@@ -117,6 +117,16 @@ jobs:
             sha256sum ${name} > ./${name}.sha256sum
           done
 
+      # 新增：只保留需要发布到 release 分支的两个文件
+      - name: Keep required files
+        if: github.event_name != 'pull_request'
+        run: |
+          cd output || exit 1
+          find . -type f \
+          ! -name "Country-cn-private.mmdb" \
+          ! -name "GeoLite2-ASN.mmdb" \
+          -delete
+
       - name: Git push assets to "release" branch
         if: github.event_name != 'pull_request'
         run: |
@@ -138,12 +148,13 @@ jobs:
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
           done
 
+      # 修改：保留 GeoLite2-ASN.mmdb
       - name: Remove some files to avoid publishing to GitHub release
         if: github.event_name != 'pull_request'
         run: |
           rm -rf ./output/*.{gz,zip}
           rm -rf ./output/GeoLite2-*.csv
-          rm -rf ./output/GeoLite2-*.mmdb
+          rm -rf ./output/GeoLite2-Country.mmdb
           rm -rf ./output/GeoLite2-*.sha256sum
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
