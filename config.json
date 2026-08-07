@@ -273,7 +273,6 @@
         "wantedList": ["cn", "private"]
       }
     },
-    /*
     {
       "type": "v2rayGeoIPDat",
       "action": "output",
@@ -432,6 +431,5 @@
       "type": "surgeRuleSet",
       "action": "output"
     }
-    */
   ]
 }
