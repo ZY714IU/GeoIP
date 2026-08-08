@@ -1,4 +1,4 @@
-name: Build geoip files
+name: GeoIP
 
 on:
   workflow_dispatch:
