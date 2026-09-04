@@ -5,7 +5,7 @@ go 1.25.11
 require (
 	github.com/klauspost/compress v1.19.2
 	github.com/maxmind/mmdbwriter v1.2.0
-	github.com/oschwald/geoip2-golang/v2 v2.2.0
+	github.com/oschwald/geoip2-golang/v2 v2.3.0
 	github.com/oschwald/maxminddb-golang/v2 v2.5.0
 	github.com/sagernet/sing-box v1.14.0
 	github.com/spf13/cobra v1.10.2
