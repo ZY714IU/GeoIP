@@ -117,7 +117,6 @@ jobs:
             sha256sum ${name} > ./${name}.sha256sum
           done
 
-      # 新增：只保留需要发布到 release 分支的两个文件
       - name: Keep required files
         if: github.event_name != 'pull_request'
         run: |
@@ -148,7 +147,6 @@ jobs:
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
           done
 
-      # 修改：保留 GeoLite2-ASN.mmdb
       - name: Remove some files to avoid publishing to GitHub release
         if: github.event_name != 'pull_request'
         run: |
