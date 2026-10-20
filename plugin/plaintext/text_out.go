@@ -1,0 +1,111 @@
+package plaintext
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"slices"
+	"strings"
+
+	"github.com/ZY714IU/GeoIP/lib"
+)
+
+const (
+	TypeTextOut = "text"
+	DescTextOut = "Convert data to plaintext CIDR format"
+)
+
+func init() {
+	lib.RegisterOutputConfigCreator(TypeTextOut, func(action lib.Action, data json.RawMessage) (lib.OutputConverter, error) {
+		return NewTextOutFromBytes(action, data)
+	})
+	lib.RegisterOutputConverter(TypeTextOut, &text_out{
+		Description: DescTextOut,
+	})
+}
+
+func NewTextOut(action lib.Action, opts ...lib.OutputOption) (lib.OutputConverter, error) {
+	return newTextOut(TypeTextOut, DescTextOut, action, opts...)
+}
+
+func NewTextOutFromBytes(action lib.Action, data []byte) (lib.OutputConverter, error) {
+	return newTextOutFromBytes(TypeTextOut, DescTextOut, action, data)
+}
+
+func (t *text_out) GetType() string {
+	return t.Type
+}
+
+func (t *text_out) GetAction() lib.Action {
+	return t.Action
+}
+
+func (t *text_out) GetDescription() string {
+	return t.Description
+}
+
+func (t *text_out) Output(container lib.Container) error {
+	for _, name := range t.filterAndSortList(container) {
+		entry, found := container.GetEntry(name)
+		if !found {
+			log.Printf("❌ entry %s not found\n", name)
+			continue
+		}
+
+		data, err := t.marshalBytes(entry)
+		if err != nil {
+			return fmt.Errorf("❌ [type %s | action %s] %w", t.Type, t.Action, err)
+		}
+
+		filename := strings.ToLower(entry.GetName()) + t.OutputExt
+		if err := t.writeFile(filename, data); err != nil {
+			return fmt.Errorf("❌ [type %s | action %s] %w", t.Type, t.Action, err)
+		}
+	}
+
+	return nil
+}
+
+func (t *text_out) filterAndSortList(container lib.Container) []string {
+	excludeMap := make(map[string]bool)
+	for _, exclude := range t.Exclude {
+		if exclude = strings.ToUpper(strings.TrimSpace(exclude)); exclude != "" {
+			excludeMap[exclude] = true
+		}
+	}
+
+	hasWantedList := false
+	wantList := make([]string, 0, len(t.Want))
+	for _, want := range t.Want {
+		if want = strings.ToUpper(strings.TrimSpace(want)); want != "" {
+			hasWantedList = true
+			if !excludeMap[want] {
+				wantList = append(wantList, want)
+			}
+		}
+	}
+
+	if hasWantedList {
+		if len(wantList) == 0 {
+			return []string{}
+		}
+
+		// Sort the list
+		slices.Sort(wantList)
+		return wantList
+	}
+
+	list := make([]string, 0, container.Len())
+	for entry := range container.Loop() {
+		name := entry.GetName()
+		if excludeMap[name] {
+			continue
+		}
+		list = append(list, name)
+	}
+
+	// Sort the list
+	slices.Sort(list)
+
+	return list
+}

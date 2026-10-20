@@ -1,0 +1,34 @@
+package maxmind
+
+import (
+	"encoding/json"
+
+	"github.com/ZY714IU/GeoIP/lib"
+)
+
+/*
+The types in this file extend the type `typeMaxmindMMDBOut`,
+which make it possible to support more formats for the project.
+*/
+
+const (
+	TypeIPInfoCountryMMDBOut = "ipinfoCountryMMDB"
+	DescIPInfoCountryMMDBOut = "Convert data to IPInfo country mmdb database format"
+)
+
+func init() {
+	lib.RegisterOutputConfigCreator(TypeIPInfoCountryMMDBOut, func(action lib.Action, data json.RawMessage) (lib.OutputConverter, error) {
+		return NewIPInfoCountryMMDBOutFromBytes(action, data)
+	})
+	lib.RegisterOutputConverter(TypeIPInfoCountryMMDBOut, &geolite2_country_mmdb_out{
+		Description: DescIPInfoCountryMMDBOut,
+	})
+}
+
+func NewIPInfoCountryMMDBOut(action lib.Action, opts ...lib.OutputOption) (lib.OutputConverter, error) {
+	return newGeoLite2CountryMMDBOut(TypeIPInfoCountryMMDBOut, DescIPInfoCountryMMDBOut, action, opts...)
+}
+
+func NewIPInfoCountryMMDBOutFromBytes(action lib.Action, data []byte) (lib.OutputConverter, error) {
+	return newGeoLite2CountryMMDBOutFromBytes(TypeIPInfoCountryMMDBOut, DescIPInfoCountryMMDBOut, action, data)
+}

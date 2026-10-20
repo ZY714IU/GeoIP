@@ -1,0 +1,271 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"net/netip"
+	"os"
+	"strings"
+
+	"github.com/ZY714IU/GeoIP/lib"
+	"github.com/ZY714IU/GeoIP/plugin/maxmind"
+	"github.com/ZY714IU/GeoIP/plugin/mihomo"
+	"github.com/ZY714IU/GeoIP/plugin/plaintext"
+	"github.com/ZY714IU/GeoIP/plugin/singbox"
+	"github.com/ZY714IU/GeoIP/plugin/special"
+	"github.com/ZY714IU/GeoIP/plugin/v2ray"
+	"github.com/spf13/cobra"
+)
+
+var supportedInputFormats = map[string]bool{
+	strings.ToLower(v2ray.TypeGeoIPDatIn):                  true,
+	strings.ToLower(mihomo.TypeMRSIn):                      true,
+	strings.ToLower(singbox.TypeSRSIn):                     true,
+	strings.ToLower(maxmind.TypeGeoLite2CountryMMDBIn):     true,
+	strings.ToLower(maxmind.TypeIPInfoCountryMMDBIn):       true,
+	strings.ToLower(maxmind.TypeDBIPCountryMMDBIn):         true,
+	strings.ToLower(plaintext.TypeClashRuleSetIPCIDRIn):    true,
+	strings.ToLower(plaintext.TypeClashRuleSetClassicalIn): true,
+	strings.ToLower(plaintext.TypeSurgeRuleSetIn):          true,
+	strings.ToLower(plaintext.TypeTextIn):                  true,
+}
+
+var supportedInputFormatsDisallowedDirFlag = map[string]bool{
+	strings.ToLower(v2ray.TypeGeoIPDatIn):              true,
+	strings.ToLower(maxmind.TypeGeoLite2CountryMMDBIn): true,
+	strings.ToLower(maxmind.TypeIPInfoCountryMMDBIn):   true,
+	strings.ToLower(maxmind.TypeDBIPCountryMMDBIn):     true,
+}
+
+func init() {
+	rootCmd.AddCommand(lookupCmd)
+
+	lookupCmd.Flags().StringP("format", "f", "", "(Required) The input format. Available formats: text, v2rayGeoIPDat, maxmindMMDB, dbipCountryMMDB, ipinfoCountryMMDB, mihomoMRS, singboxSRS, clashRuleSet, clashRuleSetClassical, surgeRuleSet")
+	lookupCmd.Flags().StringP("uri", "u", "", "URI of the input file, support both local file path and remote HTTP(S) URL. (Cannot be used with \"dir\" flag)")
+	lookupCmd.Flags().StringP("dir", "d", "", "Path to the input directory. The filename without extension will be as the name of the list. (Cannot be used with \"uri\" flag)")
+	lookupCmd.Flags().StringSliceP("searchlist", "l", []string{}, "The lists to search from, separated by comma")
+
+	lookupCmd.MarkFlagRequired("format")
+	lookupCmd.MarkFlagsOneRequired("uri", "dir")
+	lookupCmd.MarkFlagsMutuallyExclusive("uri", "dir")
+	lookupCmd.MarkFlagDirname("dir")
+}
+
+var lookupCmd = &cobra.Command{
+	Use:     "lookup",
+	Aliases: []string{"find"},
+	Short:   "Lookup if specified IP or CIDR is in specified lists",
+	Args:    cobra.RangeArgs(0, 1),
+	Run: func(cmd *cobra.Command, args []string) {
+		// Validate format
+		format, _ := cmd.Flags().GetString("format")
+		format = strings.ToLower(strings.TrimSpace(format))
+		if !supportedInputFormats[format] {
+			log.Fatal("unsupported input format")
+		}
+
+		// Get dir
+		// Some formats are single-file formats and do not support directory input
+		dir, _ := cmd.Flags().GetString("dir")
+		if supportedInputFormatsDisallowedDirFlag[format] && dir != "" {
+			log.Fatalf("format %s does not support \"dir\" flag, please use \"uri\" flag instead", format)
+		}
+
+		// Get uri
+		uri, _ := cmd.Flags().GetString("uri")
+		if supportedInputFormatsDisallowedDirFlag[format] && uri == "" {
+			log.Fatalf("format %s requires a non-empty \"uri\" flag", format)
+		}
+
+		// Set name, which must be specified together with uri
+		name := ""
+		if uri != "" {
+			name = "true"
+		}
+
+		// Get searchlist
+		searchList, _ := cmd.Flags().GetStringSlice("searchlist")
+
+		switch len(args) > 0 {
+		case true: // With search arg, run in once mode
+			search := strings.ToLower(strings.TrimSpace(args[0]))
+			if !isValidIPOrCIDR(search) {
+				fmt.Println("false")
+				return
+			}
+
+			instance, err := lib.NewInstance()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			instance.AddInput(getInputForLookup(format, name, uri, dir))
+			instance.AddOutput(getOutputForLookup(search, searchList...))
+
+			if err := instance.Run(); err != nil {
+				log.Fatal(err)
+			}
+
+		case false: // No search arg, run in REPL mode
+			instance, err := lib.NewInstance()
+			if err != nil {
+				log.Fatal(err)
+			}
+			instance.AddInput(getInputForLookup(format, name, uri, dir))
+
+			container := lib.NewContainer()
+			if err := instance.RunInput(container); err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(`Enter IP or CIDR (type "exit" to quit):`)
+			fmt.Print(">> ")
+
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				search := strings.ToLower(strings.TrimSpace(scanner.Text()))
+				if search == "" {
+					fmt.Println()
+					fmt.Print(">> ")
+					continue
+				}
+				if search == "exit" || search == `"exit"` {
+					break
+				}
+
+				if !isValidIPOrCIDR(search) {
+					fmt.Println("false")
+					fmt.Println()
+					fmt.Print(">> ")
+					continue
+				}
+
+				instance.ResetOutput()
+				instance.AddOutput(getOutputForLookup(search, searchList...))
+
+				if err := instance.RunOutput(container); err != nil {
+					log.Fatal(err)
+				}
+
+				fmt.Println()
+				fmt.Print(">> ")
+			}
+			if err := scanner.Err(); err != nil {
+				log.Fatal(err)
+			}
+		}
+	},
+}
+
+// Check if the input is a valid IP or CIDR
+func isValidIPOrCIDR(search string) bool {
+	if search == "" {
+		return false
+	}
+
+	var err error
+	switch strings.Contains(search, "/") {
+	case true: // CIDR
+		_, err = netip.ParsePrefix(search)
+	case false: // IP
+		_, err = netip.ParseAddr(search)
+	}
+
+	return err == nil
+}
+
+func getInputForLookup(format, name, uri, dir string) lib.InputConverter {
+	var input lib.InputConverter
+	var err error
+
+	switch strings.ToLower(format) {
+	case strings.ToLower(maxmind.TypeGeoLite2CountryMMDBIn):
+		input, err = maxmind.NewGeoLite2CountryMMDBIn(
+			lib.ActionAdd,
+			maxmind.WithURI(uri),
+		)
+
+	case strings.ToLower(maxmind.TypeDBIPCountryMMDBIn):
+		input, err = maxmind.NewDBIPCountryMMDBIn(
+			lib.ActionAdd,
+			maxmind.WithURI(uri),
+		)
+
+	case strings.ToLower(maxmind.TypeIPInfoCountryMMDBIn):
+		input, err = maxmind.NewIPInfoCountryMMDBIn(
+			lib.ActionAdd,
+			maxmind.WithURI(uri),
+		)
+
+	case strings.ToLower(mihomo.TypeMRSIn):
+		input, err = mihomo.NewMRSIn(
+			lib.ActionAdd,
+			mihomo.WithNameAndURI(name, uri),
+			mihomo.WithInputDir(dir),
+		)
+
+	case strings.ToLower(singbox.TypeSRSIn):
+		input, err = singbox.NewSRSIn(
+			lib.ActionAdd,
+			singbox.WithNameAndURI(name, uri),
+			singbox.WithInputDir(dir),
+		)
+
+	case strings.ToLower(v2ray.TypeGeoIPDatIn):
+		input, err = v2ray.NewGeoIPDatIn(
+			lib.ActionAdd,
+			v2ray.WithURI(uri),
+		)
+
+	case strings.ToLower(plaintext.TypeTextIn):
+		input, err = plaintext.NewTextIn(
+			lib.ActionAdd,
+			plaintext.WithNameAndURI(name, uri),
+			plaintext.WithInputDir(dir),
+		)
+
+	case strings.ToLower(plaintext.TypeClashRuleSetIPCIDRIn):
+		input, err = plaintext.NewClashRuleSetIPCIDRIn(
+			lib.ActionAdd,
+			plaintext.WithNameAndURI(name, uri),
+			plaintext.WithInputDir(dir),
+		)
+
+	case strings.ToLower(plaintext.TypeClashRuleSetClassicalIn):
+		input, err = plaintext.NewClashRuleSetClassicalIn(
+			lib.ActionAdd,
+			plaintext.WithNameAndURI(name, uri),
+			plaintext.WithInputDir(dir),
+		)
+
+	case strings.ToLower(plaintext.TypeSurgeRuleSetIn):
+		input, err = plaintext.NewSurgeRuleSetIn(
+			lib.ActionAdd,
+			plaintext.WithNameAndURI(name, uri),
+			plaintext.WithInputDir(dir),
+		)
+
+	default:
+		log.Fatal("unsupported input format")
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return input
+}
+
+func getOutputForLookup(search string, searchList ...string) lib.OutputConverter {
+	output, err := special.NewLookup(
+		lib.ActionOutput,
+		special.WithLookupSearch(search),
+		special.WithLookupSearchList(searchList),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return output
+}

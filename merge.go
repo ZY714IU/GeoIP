@@ -1,0 +1,71 @@
+package main
+
+import (
+	"log"
+	"strings"
+
+	"github.com/ZY714IU/GeoIP/lib"
+	"github.com/ZY714IU/GeoIP/plugin/special"
+	"github.com/spf13/cobra"
+)
+
+func init() {
+	rootCmd.AddCommand(mergeCmd)
+	mergeCmd.PersistentFlags().StringP("onlyiptype", "t", "", "The only IP type to output, available options: \"ipv4\", \"ipv6\"")
+}
+
+var mergeCmd = &cobra.Command{
+	Use:     "merge",
+	Aliases: []string{"m"},
+	Short:   "Merge plaintext IP & CIDR from standard input, then print to standard output",
+	Run: func(cmd *cobra.Command, args []string) {
+		otype, _ := cmd.Flags().GetString("onlyiptype")
+		otype = strings.ToLower(strings.TrimSpace(otype))
+
+		if otype != "" && otype != "ipv4" && otype != "ipv6" {
+			log.Fatal("invalid argument onlyiptype: ", otype)
+		}
+
+		instance, err := lib.NewInstance()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		instance.AddInput(getInputForMerge())
+		instance.AddOutput(getOutputForMerge(otype))
+
+		if err := instance.Run(); err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
+func getInputForMerge() lib.InputConverter {
+	input, err := special.NewStdin(
+		lib.ActionAdd,
+		special.WithStdinName("temp"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return input
+}
+
+func getOutputForMerge(otype string) lib.OutputConverter {
+	var onlyIPType lib.IPType
+	switch lib.IPType(otype) {
+	case lib.IPv4, lib.IPv6:
+		onlyIPType = lib.IPType(otype)
+	}
+
+	output, err := special.NewStdout(
+		lib.ActionOutput,
+		special.WithStdoutOnlyIPType(onlyIPType),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return output
+}
