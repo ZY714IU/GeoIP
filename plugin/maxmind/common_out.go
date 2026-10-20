@@ -20,13 +20,12 @@ var (
 	defaultIPInfoOutputDir  = filepath.Join("./", "output", "ipinfo")
 )
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 var (
 	zeroDBIPLanguageNames      dbipLanguageNames
 	zeroDBIPContinent          dbipContinent
 	zeroDBIPCountryRecord      dbipCountryRecord
 	zeroDBIPRepresentedCountry dbipRepresentedCountry
-	zeroDBIPCountry            dbipCountry
 )
 
 // Reference: https://ipinfo.io/lite
@@ -40,21 +39,21 @@ type ipInfoLite struct {
 	CountryCode   string `maxminddb:"country_code"`
 }
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 type dbipLanguageNames struct {
 	geoip2.Names
 
 	// Persian localized name
-	Persian string `json:"fa,omitzero" maxminddb:"fa"`
+	Persian string `json:"fa,omitzero" maxminddb:"fa,maxsize:1024"`
 	// Korean localized name
-	Korean string `json:"ko,omitzero" maxminddb:"ko"`
+	Korean string `json:"ko,omitzero" maxminddb:"ko,maxsize:1024"`
 }
 
 func (d dbipLanguageNames) HasData() bool {
 	return d != zeroDBIPLanguageNames
 }
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 type dbipContinent struct {
 	geoip2.Continent
 
@@ -65,7 +64,7 @@ func (d dbipContinent) HasData() bool {
 	return d != zeroDBIPContinent
 }
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 type dbipCountryRecord struct {
 	geoip2.CountryRecord
 
@@ -76,7 +75,7 @@ func (d dbipCountryRecord) HasData() bool {
 	return d != zeroDBIPCountryRecord
 }
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 type dbipRepresentedCountry struct {
 	geoip2.RepresentedCountry
 
@@ -87,7 +86,7 @@ func (d dbipRepresentedCountry) HasData() bool {
 	return d != zeroDBIPRepresentedCountry
 }
 
-// Reference: https://github.com/oschwald/geoip2-golang/blob/HEAD/models.go
+// Reference: https://github.com/oschwald/geoip2-golang/blob/v2.5.0/models.go
 type dbipCountry struct {
 	Traits             geoip2.CountryTraits   `json:"traits,omitzero"              maxminddb:"traits"`
 	Continent          dbipContinent          `json:"continent,omitzero"           maxminddb:"continent"`
@@ -97,7 +96,8 @@ type dbipCountry struct {
 }
 
 func (d dbipCountry) HasData() bool {
-	return d != zeroDBIPCountry
+	return d.Continent.HasData() || d.RepresentedCountry.HasData() ||
+		d.Country.HasData() || d.RegisteredCountry.HasData() || d.Traits.HasData()
 }
 
 func newGeoLite2CountryMMDBOut(iType string, iDesc string, action lib.Action, data json.RawMessage) (lib.OutputConverter, error) {
@@ -114,7 +114,7 @@ func newGeoLite2CountryMMDBOut(iType string, iDesc string, action lib.Action, da
 
 	if len(data) > 0 {
 		if err := json.Unmarshal(data, &tmp); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("❌ [type %s | action %s] %w", iType, action, err)
 		}
 	}
 
@@ -173,13 +173,16 @@ func (g *GeoLite2CountryMMDBOut) GetExtraInfo() (map[string]any, error) {
 	}
 	defer db.Close()
 
+	if err := db.Verify(); err != nil {
+		return nil, err
+	}
+
 	infoList := make(map[string]any)
 	for network := range db.Networks() {
 		switch g.Type {
 		case TypeGeoLite2CountryMMDBOut:
 			var record geoip2.Country
-			err := network.Decode(&record)
-			if err != nil {
+			if err := network.Decode(&record); err != nil {
 				return nil, err
 			}
 
@@ -219,8 +222,7 @@ func (g *GeoLite2CountryMMDBOut) GetExtraInfo() (map[string]any, error) {
 
 		case TypeDBIPCountryMMDBOut:
 			var record dbipCountry
-			err := network.Decode(&record)
-			if err != nil {
+			if err := network.Decode(&record); err != nil {
 				return nil, err
 			}
 
@@ -262,10 +264,10 @@ func (g *GeoLite2CountryMMDBOut) GetExtraInfo() (map[string]any, error) {
 
 		case TypeIPInfoCountryMMDBOut:
 			var record ipInfoLite
-			err := network.Decode(&record)
-			if err != nil {
+			if err := network.Decode(&record); err != nil {
 				return nil, err
 			}
+
 			countryCode := strings.ToUpper(strings.TrimSpace(record.CountryCode))
 			if _, found := infoList[countryCode]; !found {
 				record.ASN = ""
@@ -277,11 +279,10 @@ func (g *GeoLite2CountryMMDBOut) GetExtraInfo() (map[string]any, error) {
 		default:
 			return nil, lib.ErrNotSupportedFormat
 		}
-
 	}
 
 	if len(infoList) == 0 {
-		return nil, fmt.Errorf("❌ [type %s | action %s] no extra info found in the source MMDB file: %s", g.Type, g.Action, g.SourceMMDBURI)
+		return nil, fmt.Errorf("no extra info found in the source MMDB file: %s", g.SourceMMDBURI)
 	}
 
 	return infoList, nil
