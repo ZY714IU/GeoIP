@@ -1,13 +1,9 @@
-name: Build geoip files
+name: GeoIP
+
 on:
   workflow_dispatch:
-    inputs:
-      download_geoip_db_from_github:
-        description: "Download GeoLite2 databases from GitHub instead of MaxMind"
-        type: boolean
-        default: false
   schedule:
-    - cron: "0 0 * * 4"
+    - cron: "0 22 * * 3"
   push:
     branches:
       - master
@@ -24,12 +20,15 @@ on:
       - ".gitignore"
       - "LICENSE*"
       - "*.md"
+
 permissions:
   contents: write
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v7
@@ -46,36 +45,36 @@ jobs:
         run: |
           echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
           echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
-          if [[ "${{ github.event_name }}" == "pull_request" || "${{ inputs.download_geoip_db_from_github }}" == "true" || "$(date -u +%u)" != "4" ]]; then
-            echo "DOWNLOAD_FROM_GITHUB=true" >> $GITHUB_ENV
-          else
-            echo "DOWNLOAD_FROM_GITHUB=false" >> $GITHUB_ENV
-          fi
         shell: bash
 
-      - name: Download GeoLite2 databases from GitHub
-        if: env.DOWNLOAD_FROM_GITHUB == 'true'
-        run: |
-          mkdir -p output
-          curl -L --retry 3 --fail-with-body "https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release/GeoLite2-ASN.tar.gz" -o ./output/GeoLite2-ASN.tar.gz
-          curl -L --retry 3 --fail-with-body "https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release/GeoLite2-ASN-CSV.zip" -o ./output/GeoLite2-ASN-CSV.zip
-          curl -L --retry 3 --fail-with-body "https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release/GeoLite2-Country.tar.gz" -o ./output/GeoLite2-Country.tar.gz
-          curl -L --retry 3 --fail-with-body "https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release/GeoLite2-Country-CSV.zip" -o ./output/GeoLite2-Country-CSV.zip
-
-      - name: Download GeoLite2 databases from MaxMind
-        if: env.DOWNLOAD_FROM_GITHUB != 'true'
+      - name: Download GeoLite2 databases
         env:
-          LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
+          TOKEN: ${{ secrets.TOKEN }}
         run: |
           mkdir -p output
-          curl -L --retry 3 --fail-with-body "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz" -o ./output/GeoLite2-ASN.tar.gz
-          curl -L --retry 3 --fail-with-body "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN-CSV&license_key=${LICENSE_KEY}&suffix=zip" -o ./output/GeoLite2-ASN-CSV.zip
-          curl -L --retry 3 --fail-with-body "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${LICENSE_KEY}&suffix=tar.gz" -o ./output/GeoLite2-Country.tar.gz
-          curl -L --retry 3 --fail-with-body "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip" -o ./output/GeoLite2-Country-CSV.zip
+
+          curl -L \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN.tar.gz" \
+            -o ./output/GeoLite2-ASN.tar.gz
+
+          curl -L \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN-CSV.zip" \
+            -o ./output/GeoLite2-ASN-CSV.zip
+
+          curl -L \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country.tar.gz" \
+            -o ./output/GeoLite2-Country.tar.gz
+
+          curl -L \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country-CSV.zip" \
+            -o ./output/GeoLite2-Country-CSV.zip
 
       - name: Prepare GeoLite2 databases
         run: |
-          ls -lah ./output
           cp ./output/{*.gz,*.zip} ./
           unzip GeoLite2-Country-CSV.zip
           unzip GeoLite2-ASN-CSV.zip
@@ -93,8 +92,8 @@ jobs:
 
       - name: Build geoip files
         run: |
-          go build ./
-          ./geoip convert -c ./config.json
+          go build -o GeoIP ./
+          ./GeoIP convert -c ./config.json
 
       - name: Verify mmdb files
         run: |
@@ -118,6 +117,15 @@ jobs:
             sha256sum ${name} > ./${name}.sha256sum
           done
 
+      - name: Keep required files
+        if: github.event_name != 'pull_request'
+        run: |
+          cd output || exit 1
+          find . -type f \
+          ! -name "Country-cn-private.mmdb" \
+          ! -name "GeoLite2-ASN.mmdb" \
+          -delete
+
       - name: Git push assets to "release" branch
         if: github.event_name != 'pull_request'
         run: |
@@ -136,7 +144,7 @@ jobs:
         run: |
           cd output || exit 1
           for file in $(ls); do
-            curl -i --retry 3 "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
           done
 
       - name: Remove some files to avoid publishing to GitHub release
@@ -144,7 +152,7 @@ jobs:
         run: |
           rm -rf ./output/*.{gz,zip}
           rm -rf ./output/GeoLite2-*.csv
-          rm -rf ./output/GeoLite2-*.mmdb
+          rm -rf ./output/GeoLite2-Country.mmdb
           rm -rf ./output/GeoLite2-*.sha256sum
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
