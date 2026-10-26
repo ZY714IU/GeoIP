@@ -1,4 +1,4 @@
-module github.com/Loyalsoldier/geoip
+module github.com/ZY714IU/GeoIP2
 
 go 1.26.9
 

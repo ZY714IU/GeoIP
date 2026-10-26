@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/ZY714IU/GeoIP2/lib"
 	"github.com/tidwall/gjson"
 	"gopkg.in/yaml.v2"
 )

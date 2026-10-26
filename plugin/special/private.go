@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/ZY714IU/GeoIP2/lib"
 )
 
 const (
@@ -14,8 +14,8 @@ const (
 )
 
 // References:
-// - https://github.com/Loyalsoldier/geoip/issues/234
-// - https://github.com/Loyalsoldier/geoip/pull/412
+// - https://github.com/ZY714IU/GeoIP2/issues/234
+// - https://github.com/ZY714IU/GeoIP2/pull/412
 // - https://www.iana.org/assignments/iana-ipv4-special-registry
 // - https://www.iana.org/assignments/iana-ipv6-special-registry
 var privateCIDRs = []string{
