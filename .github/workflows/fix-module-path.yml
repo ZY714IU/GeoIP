@@ -1,0 +1,24 @@
+
+name: Check Go Module Paths
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect module paths
+        run: |
+          echo "=== go.mod ==="
+          grep -n '^[[:space:]]*module ' go.mod || true
+          echo "=== Go source files containing upstream module path ==="
+          grep -RIl --include='*.go' 'github.com/Loyalsoldier/geoip' . || true
+          echo "=== Occurrences in Go source files ==="
+          grep -Rn --include='*.go' 'github.com/Loyalsoldier/geoip' . || true
