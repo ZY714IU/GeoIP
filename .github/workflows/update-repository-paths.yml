@@ -29,7 +29,7 @@ jobs:
           import re
 
           OLD = re.compile(r"Loyalsoldier/geoip(?![\w-])", re.IGNORECASE)
-          NEW = "ZY714IU/GeoIP2"
+          NEW = "ZY714IU/GeoIP"
           EXCLUDE_NAMES = {
               "build.yml",
               "README.md",
