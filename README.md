@@ -1,8 +1,8 @@
 ### 📥 下载链接
 | 项目 | 文件 | GitHub RAW | CDN 加速 |
 | :--: | :--: | :--: | :--: |
-| GeoIP | Country-cn-private.mmdb | [下载](https://github.com/ZY714IU/GeoIP2/raw/release/Country-cn-private.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP2@release/Country-cn-private.mmdb) |
-| ASN | GeoLite2-ASN.mmdb | [下载](https://github.com/ZY714IU/GeoIP2/raw/release/GeoLite2-ASN.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP2@release/GeoLite2-ASN.mmdb) |
+| GeoIP | Country-cn-private.mmdb | [下载](https://github.com/ZY714IU/GeoIP/raw/release/Country-cn-private.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/Country-cn-private.mmdb) |
+| ASN | GeoLite2-ASN.mmdb | [下载](https://github.com/ZY714IU/GeoIP/raw/release/GeoLite2-ASN.mmdb) | [下载](https://cdn.jsdelivr.net/gh/ZY714IU/GeoIP@release/GeoLite2-ASN.mmdb) |
 
 # 简介
 
@@ -13,7 +13,7 @@
 ## License
 
 [CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/) and
-[GPL-3.0](https://github.com/ZY714IU/GeoIP2/blob/master/LICENSE-GPL)
+[GPL-3.0](https://github.com/ZY714IU/GeoIP/blob/master/LICENSE-GPL)
 
 This project also contains third-party IP data which retain their original licenses.
 
