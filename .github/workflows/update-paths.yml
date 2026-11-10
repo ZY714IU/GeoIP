@@ -33,7 +33,7 @@ jobs:
               "build.yml",
               "README.md",
               "config.json",
-              "update-repository-paths.yml",
+              "update-paths.yml",
           }
 
           changed = []
