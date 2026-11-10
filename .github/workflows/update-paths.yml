@@ -1,0 +1,93 @@
+name: update-paths.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-repository-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v7
+        with:
+          ref: master
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Replace repo paths
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          OLD = re.compile(r"Loyalsoldier/geoip(?![\w-])", re.IGNORECASE)
+          NEW = "ZY714IU/GeoIP"
+          EXCLUDE_NAMES = {
+              "build.yml",
+              "README.md",
+              "config.json",
+              "update-repository-paths.yml",
+          }
+
+          changed = []
+          for p in sorted(Path(".").rglob("*")):
+              if not p.is_file() or ".git" in p.parts:
+                  continue
+              if p.name in EXCLUDE_NAMES:
+                  continue
+              try:
+                  s = p.read_bytes().decode("utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              new_s, n = OLD.subn(NEW, s)
+              if n:
+                  p.write_bytes(new_s.encode("utf-8"))
+                  changed.append(f"{p.as_posix()}: {n} 处")
+
+          print("\n".join(changed) if changed else "没有需要替换的内容。")
+          PY
+
+      - name: Set up Protoc
+        shell: bash
+        run: |
+          PROTOC_VERSION=36.2
+          curl -fsSL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" -o /tmp/protoc.zip
+          sudo unzip -o /tmp/protoc.zip -d /usr/local
+          protoc --version
+
+      - name: Generate Protobuf
+        shell: bash
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          cd plugin/v2ray
+          protoc --go_out=. --go_opt=paths=source_relative geoip.proto
+
+      - name: Check changes
+        run: |
+          git diff --check
+          git diff --stat
+          git diff
+
+      - name: Build
+        run: go build ./...
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Update repository paths"
+          git push origin HEAD:master
