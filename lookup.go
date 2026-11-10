@@ -8,13 +8,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
-	"github.com/Loyalsoldier/geoip/plugin/maxmind"
-	"github.com/Loyalsoldier/geoip/plugin/mihomo"
-	"github.com/Loyalsoldier/geoip/plugin/plaintext"
-	"github.com/Loyalsoldier/geoip/plugin/singbox"
-	"github.com/Loyalsoldier/geoip/plugin/special"
-	"github.com/Loyalsoldier/geoip/plugin/v2ray"
+	"github.com/ZY714IU/GeoIP/lib"
+	"github.com/ZY714IU/GeoIP/plugin/maxmind"
+	"github.com/ZY714IU/GeoIP/plugin/mihomo"
+	"github.com/ZY714IU/GeoIP/plugin/plaintext"
+	"github.com/ZY714IU/GeoIP/plugin/singbox"
+	"github.com/ZY714IU/GeoIP/plugin/special"
+	"github.com/ZY714IU/GeoIP/plugin/v2ray"
 	"github.com/spf13/cobra"
 )
 
