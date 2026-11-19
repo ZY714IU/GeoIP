@@ -1,3 +1,4 @@
+
 name: Build geoip files
 
 on:
@@ -47,42 +48,48 @@ jobs:
           echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
         shell: bash
 
+      # 下载公开仓库中的 GeoLite2 数据库，并检查 HTTP 状态和文件大小
       - name: Download GeoLite2 databases
-        env:
-          TOKEN: ${{ secrets.TOKEN }}
         run: |
+          set -euo pipefail
           mkdir -p output
 
-          curl -L \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN.tar.gz" \
-            -o ./output/GeoLite2-ASN.tar.gz
+          download() {
+            local url="$1"
+            local file="$2"
 
-          curl -L \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN-CSV.zip" \
-            -o ./output/GeoLite2-ASN-CSV.zip
+            curl -fLsS --retry 3 \
+              -o "./output/$file" \
+              -w "$file HTTP=%{http_code} SIZE=%{size_download} bytes\n" \
+              "$url"
 
-          curl -L \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country.tar.gz" \
-            -o ./output/GeoLite2-Country.tar.gz
+            test -s "./output/$file"
+          }
 
-          curl -L \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country-CSV.zip" \
-            -o ./output/GeoLite2-Country-CSV.zip
+          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN.tar.gz" "GeoLite2-ASN.tar.gz"
+          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN-CSV.zip" "GeoLite2-ASN-CSV.zip"
+          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country.tar.gz" "GeoLite2-Country.tar.gz"
+          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country-CSV.zip" "GeoLite2-Country-CSV.zip"
 
+          echo "Download results:"
+          ls -lh ./output
+
+      # 解压数据库，并整理需要的文件
       - name: Prepare GeoLite2 databases
         run: |
+          set -euo pipefail
+
           cp ./output/{*.gz,*.zip} ./
+
           unzip GeoLite2-Country-CSV.zip
           unzip GeoLite2-ASN-CSV.zip
+
           tar -xvzf GeoLite2-Country.tar.gz
           tar -xvzf GeoLite2-ASN.tar.gz
 
           cp GeoLite2-Country_*/*.mmdb ./output/
           cp GeoLite2-ASN_*/*.mmdb ./output/
+
           cp GeoLite2-Country-CSV_*/{GeoLite2-Country-Blocks-*,GeoLite2-Country-Locations-en,GeoLite2-Country-Locations-zh-CN}.csv ./output/
           cp GeoLite2-ASN-CSV_*/*.csv ./output/
 
