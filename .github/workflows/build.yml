@@ -1,5 +1,5 @@
 
-name: Build geoip files
+name: build
 
 on:
   workflow_dispatch:
@@ -48,8 +48,9 @@ jobs:
           echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
         shell: bash
 
-      # 下载公开仓库中的 GeoLite2 数据库，并检查 HTTP 状态和文件大小
       - name: Download GeoLite2 databases
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p output
@@ -59,6 +60,7 @@ jobs:
             local file="$2"
 
             curl -fLsS --retry 3 \
+              -H "Authorization: Bearer ${TOKEN}" \
               -o "./output/$file" \
               -w "$file HTTP=%{http_code} SIZE=%{size_download} bytes\n" \
               "$url"
@@ -74,7 +76,6 @@ jobs:
           echo "Download results:"
           ls -lh ./output
 
-      # 解压数据库，并整理需要的文件
       - name: Prepare GeoLite2 databases
         run: |
           set -euo pipefail
