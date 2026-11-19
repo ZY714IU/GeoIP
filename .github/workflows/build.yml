@@ -43,40 +43,102 @@ jobs:
           cache-dependency-path: ./go.sum
 
       - name: Set variables
-        run: |
-          echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
         shell: bash
+        run: |
+          echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
 
+      # 使用 GitHub API 下载，先认证，失败后尝试匿名访问
       - name: Download GeoLite2 databases
         env:
           TOKEN: ${{ secrets.TOKEN }}
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p output
 
           download() {
-            local url="$1"
+            local path="$1"
             local file="$2"
+            local url="https://api.github.com/repos/ZY714IU/7/contents/${path}?ref=main"
+            local tmp="./output/${file}.tmp"
+            local http_code=""
+            local downloaded=false
 
-            curl -fLsS --retry 3 \
-              -H "Authorization: Bearer ${TOKEN}" \
-              -o "./output/$file" \
-              -w "$file HTTP=%{http_code} SIZE=%{size_download} bytes\n" \
-              "$url"
+            echo "Downloading: $file"
 
+            if [[ -n "${TOKEN:-}" ]]; then
+              if http_code=$(curl -fLsS \
+                --retry 3 \
+                --retry-delay 2 \
+                --connect-timeout 20 \
+                --max-time 600 \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Accept: application/vnd.github.raw+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                -o "$tmp" \
+                -w "%{http_code}" \
+                "$url"); then
+
+                if [[ -s "$tmp" ]]; then
+                  downloaded=true
+                  echo "$file HTTP=$http_code (authenticated)"
+                fi
+              else
+                echo "Authenticated download failed: HTTP=${http_code:-unknown}"
+              fi
+            fi
+
+            if [[ "$downloaded" != true ]]; then
+              rm -f "$tmp"
+              echo "Trying anonymous download: $file"
+
+              if ! http_code=$(curl -fLsS \
+                --retry 3 \
+                --retry-delay 2 \
+                --connect-timeout 20 \
+                --max-time 600 \
+                -H "Accept: application/vnd.github.raw+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                -o "$tmp" \
+                -w "%{http_code}" \
+                "$url"); then
+                echo "Download failed: $file HTTP=${http_code:-unknown}"
+                rm -f "$tmp"
+                return 1
+              fi
+
+              if [[ ! -s "$tmp" ]]; then
+                echo "Error: Downloaded file is empty: $file"
+                rm -f "$tmp"
+                return 1
+              fi
+
+              echo "$file HTTP=$http_code (anonymous)"
+            fi
+
+            mv "$tmp" "./output/$file"
             test -s "./output/$file"
           }
 
-          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN.tar.gz" "GeoLite2-ASN.tar.gz"
-          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-ASN-CSV.zip" "GeoLite2-ASN-CSV.zip"
-          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country.tar.gz" "GeoLite2-Country.tar.gz"
-          download "https://raw.githubusercontent.com/ZY714IU/7/main/Maxmind/GeoLite2-Country-CSV.zip" "GeoLite2-Country-CSV.zip"
+          download "Maxmind/GeoLite2-ASN.tar.gz" "GeoLite2-ASN.tar.gz"
+          download "Maxmind/GeoLite2-ASN-CSV.zip" "GeoLite2-ASN-CSV.zip"
+          download "Maxmind/GeoLite2-Country.tar.gz" "GeoLite2-Country.tar.gz"
+          download "Maxmind/GeoLite2-Country-CSV.zip" "GeoLite2-Country-CSV.zip"
+
+          echo "Checking archive integrity..."
+
+          tar -tzf ./output/GeoLite2-ASN.tar.gz > /dev/null
+          tar -tzf ./output/GeoLite2-Country.tar.gz > /dev/null
+
+          unzip -tq ./output/GeoLite2-ASN-CSV.zip
+          unzip -tq ./output/GeoLite2-Country-CSV.zip
 
           echo "Download results:"
           ls -lh ./output
 
       - name: Prepare GeoLite2 databases
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -99,65 +161,106 @@ jobs:
           cp GeoLite2-ASN-CSV_*/*.csv ./geolite2/
 
       - name: Build geoip files
+        shell: bash
         run: |
+          set -euo pipefail
           go build -o GeoIP ./
           ./GeoIP convert -c ./config.json
 
       - name: Verify mmdb files
+        shell: bash
         run: |
-          cd ./output || exit 1
+          set -euo pipefail
+          cd ./output
+
           go install -v github.com/maxmind/mmdbverify@latest
-          for name in $(ls *.mmdb); do
-            $(go env GOPATH)/bin/mmdbverify -file ${name}
+
+          shopt -s nullglob
+          files=( *.mmdb )
+
+          if (( ${#files[@]} == 0 )); then
+            echo "Error: No MMDB files found."
+            exit 1
+          fi
+
+          for name in "${files[@]}"; do
+            "$(go env GOPATH)/bin/mmdbverify" -file "$name"
           done
 
       - name: Generate sha256 checksum for dat files
+        shell: bash
         run: |
-          cd ./output || exit 1
-          for name in $(ls *.dat); do
-            sha256sum ${name} > ./${name}.sha256sum
+          set -euo pipefail
+          cd ./output
+
+          shopt -s nullglob
+          files=( *.dat )
+
+          for name in "${files[@]}"; do
+            sha256sum "$name" > "./${name}.sha256sum"
           done
 
       - name: Generate sha256 checksum for mmdb files
+        shell: bash
         run: |
-          cd ./output || exit 1
-          for name in $(ls *.mmdb); do
-            sha256sum ${name} > ./${name}.sha256sum
+          set -euo pipefail
+          cd ./output
+
+          shopt -s nullglob
+          files=( *.mmdb )
+
+          for name in "${files[@]}"; do
+            sha256sum "$name" > "./${name}.sha256sum"
           done
 
       - name: Keep required files
         if: github.event_name != 'pull_request'
+        shell: bash
         run: |
-          cd output || exit 1
+          set -euo pipefail
+          cd output
+
           find . -type f \
-          ! -name "Country-cn-private.mmdb" \
-          ! -name "GeoLite2-ASN.mmdb" \
-          -delete
+            ! -name "Country-cn-private.mmdb" \
+            ! -name "GeoLite2-ASN.mmdb" \
+            -delete
 
       - name: Git push assets to "release" branch
         if: github.event_name != 'pull_request'
+        shell: bash
         run: |
-          cd output || exit 1
+          set -euo pipefail
+          cd output
+
           git init
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git checkout -b release
           git add -A
           git commit -m "${{ env.RELEASE_NAME }}"
+
           git remote add geoip "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u geoip release
 
       - name: Purge jsdelivr CDN
         if: github.event_name != 'pull_request'
+        shell: bash
         run: |
-          cd output || exit 1
-          for file in $(ls); do
+          set -euo pipefail
+          cd output
+
+          for file in *; do
+            [[ -f "$file" ]] || continue
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
           done
 
       - name: Remove some files to avoid publishing to GitHub release
         if: github.event_name != 'pull_request'
+        shell: bash
         run: |
+          set -euo pipefail
+
           rm -rf ./output/*.{gz,zip}
           rm -rf ./output/GeoLite2-*.csv
           rm -rf ./output/GeoLite2-Country.mmdb
@@ -168,5 +271,9 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
-          gh release create ${{ env.TAG_NAME }} --title "${{ env.RELEASE_NAME }}" ./output/*
+          set -euo pipefail
+          gh release create "${{ env.TAG_NAME }}" \
+            --title "${{ env.RELEASE_NAME }}" \
+            ./output/*
