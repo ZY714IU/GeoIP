@@ -89,5 +89,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Update repository paths"
+          git commit -m "Update repository paths [ZY-AUTO]"
           git push origin HEAD:master
