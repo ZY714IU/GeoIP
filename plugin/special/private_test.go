@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/ZY714IU/GeoIP/lib"
 )
 
 var (

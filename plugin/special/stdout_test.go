@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/ZY714IU/GeoIP/lib"
 )
 
 func TestNewStdout(t *testing.T) {

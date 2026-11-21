@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/ZY714IU/GeoIP/lib"
 )
 
 func TestNewCutter(t *testing.T) {
